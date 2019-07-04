@@ -121,7 +121,7 @@
         <dependency>
             <groupId>com.capitalone.dashboard</groupId>
             <artifactId>core</artifactId>
-            <version>3.1.3-SNAPSHOT</version>
+            <version>3.1.2</version>
         </dependency>
         <dependency>
             <groupId>org.apache.httpcomponents</groupId>
@@ -273,6 +273,26 @@
             <name>Tapabrata "Topo" Pal</name>
             <email>tapabrata.pal@capitalone.com</email>
             <url>https://github.com/tabladrum</url>
+            <roles>
+                <role>maintainer</role>
+            </roles>
+            <timezone>America/New_York</timezone>
+        </developer>
+        <developer>
+            <id>rvema</id>
+            <name>Raghavendra Vema</name>
+            <email>ragha.vema@capitalone.com</email>
+            <url>https://github.com/rvema</url>
+            <roles>
+                <role>maintainer</role>
+            </roles>
+            <timezone>America/New_York</timezone>
+        </developer>
+        <developer>
+            <id>nireeshT</id>
+            <name>Nireesh Thiruveedula</name>
+            <email>nireesh.thiruveedula@capitalone.com</email>
+            <url>https://github.com/nireesht</url>
             <roles>
                 <role>maintainer</role>
             </roles>
