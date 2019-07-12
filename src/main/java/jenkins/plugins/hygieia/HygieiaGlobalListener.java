@@ -18,6 +18,7 @@ import jenkins.model.Jenkins;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.httpclient.HttpStatus;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.apache.commons.lang3.tuple.Triple;
 import org.json.simple.parser.ParseException;
 
@@ -127,7 +128,7 @@ public class HygieiaGlobalListener extends RunListener<Run<?, ?>> {
             buildStages = process_node_links(run, listener, hygieiaGlobalListenerDescriptor, hygieiaService,buildStages);
             buildStages = process_logs(run, listener, hygieiaGlobalListenerDescriptor, hygieiaService,buildStages);
         }catch (Exception e){
-            listener.getLogger().println("Hygieia: call response error : " + e.getStackTrace());
+            listener.getLogger().println("Hygieia: Cause for Jenkins API call failure : " + ExceptionUtils.getRootCauseMessage(e));
         }
 
         String startedBy = HygieiaUtils.getUserID(run, listener);
