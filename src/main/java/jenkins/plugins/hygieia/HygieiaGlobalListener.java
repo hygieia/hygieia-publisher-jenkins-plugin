@@ -176,7 +176,7 @@ public class HygieiaGlobalListener extends RunListener<Run<?, ?>> {
             }
         }catch (Exception e){
 
-            throw new HygieiaException("Hygieia: api call response error: HygieiaGlobalListener.processStages()", e.getCause(),HygieiaException.BAD_DATA);
+            throw new HygieiaException("HygieiaGlobalListener.processStages() - " + ExceptionUtils.getMessage(e), e.getCause(),HygieiaException.BAD_DATA);
         }
         return buildStages;
     }
@@ -195,7 +195,7 @@ public class HygieiaGlobalListener extends RunListener<Run<?, ?>> {
                     HygieiaUtils.setLogUrl(responseString,stage);
                 }
             }catch (Exception e){
-                throw new HygieiaException("Hygieia: api call response error: HygieiaGlobalListener.process_node_links()", e.getCause(),HygieiaException.BAD_DATA);
+                throw new HygieiaException("HygieiaGlobalListener.process_node_links() - " + ExceptionUtils.getMessage(e), e.getCause(),HygieiaException.BAD_DATA);
             }
 
         }
@@ -218,7 +218,7 @@ public class HygieiaGlobalListener extends RunListener<Run<?, ?>> {
                         HygieiaUtils.set_logs(responseString,stage);
                     }
                 }catch (Exception e){
-                    throw new HygieiaException("Hygieia: api call response error: HygieiaGlobalListener.process_logs()", e.getCause(),HygieiaException.BAD_DATA);
+                    throw new HygieiaException("HygieiaGlobalListener.process_logs() - " + ExceptionUtils.getMessage(e), e.getCause(),HygieiaException.BAD_DATA);
                 }
             }
         }
