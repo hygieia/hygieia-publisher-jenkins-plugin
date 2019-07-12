@@ -7,6 +7,7 @@ import com.capitalone.dashboard.request.CodeQualityCreateRequest;
 import com.capitalone.dashboard.request.GenericCollectorItemCreateRequest;
 import com.capitalone.dashboard.response.BuildDataCreateResponse;
 import hudson.Extension;
+import hudson.model.AbstractBuild;
 import hudson.model.Run;
 import hudson.model.TaskListener;
 import hudson.model.listeners.RunListener;
@@ -159,9 +160,13 @@ public class HygieiaGlobalListener extends RunListener<Run<?, ?>> {
     }
 
     private LinkedList<BuildStage> processStages(Run run, TaskListener listener, HygieiaPublisher.DescriptorImpl hygieiaGlobalListenerDescriptor, HygieiaService hygieiaService) throws HygieiaException{
+        LinkedList<BuildStage> buildStages=null;
+        // BuildJob will not have any stages hence do not attempt restful calls to Jenkins API.
+        if(run instanceof AbstractBuild) { return buildStages;}
+
         String buildUrl = HygieiaUtils.getBuildUrl(run);
         String wfapiUrl = buildUrl + WFAPI_DESCRIBE;
-        LinkedList<BuildStage> buildStages=null;
+
         String responseString = "";
         try{
             RestCall.RestCallResponse callResponse = hygieiaService.getStageResponse(wfapiUrl,hygieiaGlobalListenerDescriptor.getJenkinsUserId(),hygieiaGlobalListenerDescriptor.getJenkinsToken());
