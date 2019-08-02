@@ -10,6 +10,7 @@ import com.capitalone.dashboard.request.TestDataCreateRequest;
 import hudson.model.BuildListener;
 import hygieia.utils.HygieiaUtils;
 import org.apache.commons.httpclient.HttpStatus;
+import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
@@ -21,6 +22,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -36,6 +38,7 @@ public class DefaultHygieiaService implements HygieiaService {
     private boolean useProxy;
     private BuildListener listener;
 
+    private static final int RETRY_COUNT = 3;
 
     public DefaultHygieiaService(String hygieiaAPIUrl, String hygieiaToken, String hygieiaJenkinsName, boolean useProxy) {
         super();
@@ -324,9 +327,47 @@ public class DefaultHygieiaService implements HygieiaService {
 
     @Override
     public RestCall.RestCallResponse getStageResponse(String url, String jenkinsUser, String token){
+        final String METHOD_NAME = "HygieiaService.getStageResponse():";
+        int attempt_call = 0;
+        logger.log(Level.FINE, METHOD_NAME + " Attempting Call to Jenkins api for : <" + url+"> using user : " +
+                "<"+jenkinsUser+">");
+        RestCall.RestCallResponse callResponse = null;
+        synchronized (this){
+            while(attempt_call < RETRY_COUNT) {
+                callResponse = makeRestCallForStageResponse(url, jenkinsUser, token);
+                if(!Objects.isNull(callResponse)) {
+                    String jsonString = callResponse.getResponseString();
+                    try {
+                        //check if the response is a valid json String
+                        new JSONParser().parse(jsonString);
+                        return callResponse;
+                    }
+                    catch (Exception e) {
+                        attempt_call++;
+                        logger.log(Level.WARNING,METHOD_NAME +" Rest Call try # " + attempt_call + " failed due to "
+                                + ExceptionUtils.getMessage(e) + ". Will retry after 1 Second.");
+                        sleepOneSecond();
+                    }
+                }
+            }
+        }
+        return callResponse;
+    }
+
+    private RestCall.RestCallResponse makeRestCallForStageResponse(String url, String jenkinsUser, String token){
         RestCall restCall = new RestCall(useProxy);
         RestCall.RestCallResponse callResponse;
         callResponse = restCall.makeRestCallGet(url,jenkinsUser,token);
         return callResponse;
     }
+
+    private void sleepOneSecond() {
+        try {
+            Thread.sleep(1000);
+        }
+        catch (Exception e) {
+            //do nothing
+        }
+    }
+
 }

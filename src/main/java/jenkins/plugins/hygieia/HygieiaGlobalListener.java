@@ -7,6 +7,7 @@ import com.capitalone.dashboard.request.CodeQualityCreateRequest;
 import com.capitalone.dashboard.request.GenericCollectorItemCreateRequest;
 import com.capitalone.dashboard.response.BuildDataCreateResponse;
 import hudson.Extension;
+import hudson.model.AbstractBuild;
 import hudson.model.Run;
 import hudson.model.TaskListener;
 import hudson.model.listeners.RunListener;
@@ -18,6 +19,7 @@ import jenkins.model.Jenkins;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.httpclient.HttpStatus;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.apache.commons.lang3.tuple.Triple;
 import org.json.simple.parser.ParseException;
 
@@ -127,7 +129,7 @@ public class HygieiaGlobalListener extends RunListener<Run<?, ?>> {
             buildStages = process_node_links(run, listener, hygieiaGlobalListenerDescriptor, hygieiaService,buildStages);
             buildStages = process_logs(run, listener, hygieiaGlobalListenerDescriptor, hygieiaService,buildStages);
         }catch (Exception e){
-            listener.getLogger().println("Hygieia: call response error : " + e.getStackTrace());
+            listener.getLogger().println("Hygieia: Cause for Jenkins API call failure : " + ExceptionUtils.getRootCauseMessage(e));
         }
 
         String startedBy = HygieiaUtils.getUserID(run, listener);
@@ -158,9 +160,13 @@ public class HygieiaGlobalListener extends RunListener<Run<?, ?>> {
     }
 
     private LinkedList<BuildStage> processStages(Run run, TaskListener listener, HygieiaPublisher.DescriptorImpl hygieiaGlobalListenerDescriptor, HygieiaService hygieiaService) throws HygieiaException{
+        LinkedList<BuildStage> buildStages=null;
+        // BuildJob will not have any stages hence do not attempt restful calls to Jenkins API.
+        if(run instanceof AbstractBuild) { return buildStages;}
+
         String buildUrl = HygieiaUtils.getBuildUrl(run);
         String wfapiUrl = buildUrl + WFAPI_DESCRIBE;
-        LinkedList<BuildStage> buildStages=null;
+
         String responseString = "";
         try{
             RestCall.RestCallResponse callResponse = hygieiaService.getStageResponse(wfapiUrl,hygieiaGlobalListenerDescriptor.getJenkinsUserId(),hygieiaGlobalListenerDescriptor.getJenkinsToken());
@@ -170,7 +176,7 @@ public class HygieiaGlobalListener extends RunListener<Run<?, ?>> {
             }
         }catch (Exception e){
 
-            throw new HygieiaException("Hygieia: api call response error: HygieiaGlobalListener.processStages()", e.getCause(),HygieiaException.BAD_DATA);
+            throw new HygieiaException("HygieiaGlobalListener.processStages() - " + ExceptionUtils.getRootCauseMessage(e), e.getCause(),HygieiaException.BAD_DATA);
         }
         return buildStages;
     }
@@ -189,7 +195,7 @@ public class HygieiaGlobalListener extends RunListener<Run<?, ?>> {
                     HygieiaUtils.setLogUrl(responseString,stage);
                 }
             }catch (Exception e){
-                throw new HygieiaException("Hygieia: api call response error: HygieiaGlobalListener.process_node_links()", e.getCause(),HygieiaException.BAD_DATA);
+                throw new HygieiaException("HygieiaGlobalListener.process_node_links() - " + ExceptionUtils.getRootCauseMessage(e), e.getCause(),HygieiaException.BAD_DATA);
             }
 
         }
@@ -212,7 +218,7 @@ public class HygieiaGlobalListener extends RunListener<Run<?, ?>> {
                         HygieiaUtils.set_logs(responseString,stage);
                     }
                 }catch (Exception e){
-                    throw new HygieiaException("Hygieia: api call response error: HygieiaGlobalListener.process_logs()", e.getCause(),HygieiaException.BAD_DATA);
+                    throw new HygieiaException("HygieiaGlobalListener.process_logs() - " + ExceptionUtils.getRootCauseMessage(e), e.getCause(),HygieiaException.BAD_DATA);
                 }
             }
         }

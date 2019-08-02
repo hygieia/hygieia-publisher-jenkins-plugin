@@ -460,7 +460,7 @@ public class HygieiaUtils {
             return buildStages;
         }catch (ParseException parseException){
             logger.log(Level.INFO,ExceptionUtils.getStackTrace(parseException));
-            throw new HygieiaException("Error parsing stage information", HygieiaException.JSON_FORMAT_ERROR);
+            throw new HygieiaException("Error parsing stage information - " + ExceptionUtils.getMessage(parseException), HygieiaException.JSON_FORMAT_ERROR);
         }catch (Exception ex){
             logger.log(Level.INFO,ExceptionUtils.getStackTrace(ex));
             throw new HygieiaException("Error in method :: HygieiaUtils.getBuildStages() :: ", HygieiaException.BAD_DATA);
