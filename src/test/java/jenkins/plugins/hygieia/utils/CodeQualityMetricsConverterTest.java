@@ -349,6 +349,41 @@ public class CodeQualityMetricsConverterTest {
     }
 
     @Test
+    public void pmdNoFilesReportHandled() {
+        PmdReport report = new PmdReport();
+
+
+        CodeQualityMetricsConverter testee = new CodeQualityMetricsConverter();
+        report.accept(testee);
+        CodeQuality codeQualityMetrics = testee.produceResult();
+
+        assertThat(codeQualityMetrics.getMetrics()).extracting("name", "formattedValue", "value", "status")
+                .contains(
+                        tuple("blocker_violations", "0", "0", CodeQualityMetricStatus.Ok),
+                        tuple("critical_violations", "0", "0", CodeQualityMetricStatus.Ok),
+                        tuple("major_violations", "0", "0", CodeQualityMetricStatus.Ok),
+                        tuple("violations", "0", "0", CodeQualityMetricStatus.Ok));
+    }
+
+    @Test
+    public void pmdNoViolationsReportHandled() {
+        PmdReport report = new PmdReport();
+        PmdReport.PmdFile file = new PmdReport.PmdFile();
+        report.setFiles(Arrays.asList(file));
+
+        CodeQualityMetricsConverter testee = new CodeQualityMetricsConverter();
+        report.accept(testee);
+        CodeQuality codeQualityMetrics = testee.produceResult();
+
+        assertThat(codeQualityMetrics.getMetrics()).extracting("name", "formattedValue", "value", "status")
+                .contains(
+                        tuple("blocker_violations", "0", "0", CodeQualityMetricStatus.Ok),
+                        tuple("critical_violations", "0", "0", CodeQualityMetricStatus.Ok),
+                        tuple("major_violations", "0", "0", CodeQualityMetricStatus.Ok),
+                        tuple("violations", "0", "0", CodeQualityMetricStatus.Ok));
+    }
+
+    @Test
     public void sumsMultiplePmdReports() {
         PmdReport report1 = this.producePmdReport();
         PmdReport report2 = this.producePmdReport();
@@ -450,6 +485,63 @@ public class CodeQualityMetricsConverterTest {
                         tuple("critical_violations", "11", "11", CodeQualityMetricStatus.Alert),
                         tuple("major_violations", "2", "2", CodeQualityMetricStatus.Warning),
                         tuple("violations", "1", "1", CodeQualityMetricStatus.Warning));
+    }
+
+    @Test
+    public void checkstyleReportsWithNoFiles() {
+        CheckstyleReport report = new CheckstyleReport();
+
+        CodeQualityMetricsConverter testee = new CodeQualityMetricsConverter();
+        report.accept(testee);
+
+        CodeQuality codeQualityMetrics = testee.produceResult();
+
+        assertThat(codeQualityMetrics.getMetrics()).extracting("name", "formattedValue", "value", "status")
+                .contains(
+                        tuple("blocker_violations", "0", "0", CodeQualityMetricStatus.Ok),
+                        tuple("critical_violations", "0", "0", CodeQualityMetricStatus.Ok),
+                        tuple("major_violations", "0", "0", CodeQualityMetricStatus.Ok),
+                        tuple("violations", "0", "0", CodeQualityMetricStatus.Ok));
+    }
+
+    @Test
+    public void checkstyleReportsWithNoViolations() {
+        CheckstyleReport report = new CheckstyleReport();
+        CheckstyleReport.CheckstyleFile file = new CheckstyleReport.CheckstyleFile();
+        report.setFiles(Arrays.asList(file));
+
+        CodeQualityMetricsConverter testee = new CodeQualityMetricsConverter();
+        report.accept(testee);
+
+        CodeQuality codeQualityMetrics = testee.produceResult();
+
+        assertThat(codeQualityMetrics.getMetrics()).extracting("name", "formattedValue", "value", "status")
+                .contains(
+                        tuple("blocker_violations", "0", "0", CodeQualityMetricStatus.Ok),
+                        tuple("critical_violations", "0", "0", CodeQualityMetricStatus.Ok),
+                        tuple("major_violations", "0", "0", CodeQualityMetricStatus.Ok),
+                        tuple("violations", "0", "0", CodeQualityMetricStatus.Ok));
+    }
+
+    @Test
+    public void checkstyleReportsWithNoErrors() {
+        CheckstyleReport report = new CheckstyleReport();
+        CheckstyleReport.CheckstyleFile file = new CheckstyleReport.CheckstyleFile();
+        List<CheckstyleReport.CheckstyleError> errors = new ArrayList<>();
+        file.setErrors(new ArrayList<>());
+        report.setFiles(Arrays.asList(file));
+
+        CodeQualityMetricsConverter testee = new CodeQualityMetricsConverter();
+        report.accept(testee);
+
+        CodeQuality codeQualityMetrics = testee.produceResult();
+
+        assertThat(codeQualityMetrics.getMetrics()).extracting("name", "formattedValue", "value", "status")
+                .contains(
+                        tuple("blocker_violations", "0", "0", CodeQualityMetricStatus.Ok),
+                        tuple("critical_violations", "0", "0", CodeQualityMetricStatus.Ok),
+                        tuple("major_violations", "0", "0", CodeQualityMetricStatus.Ok),
+                        tuple("violations", "0", "0", CodeQualityMetricStatus.Ok));
     }
 
     private CheckstyleReport produceCheckStyleReport() {
