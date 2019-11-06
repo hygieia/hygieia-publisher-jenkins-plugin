@@ -77,6 +77,7 @@ public class HygieiaUtils {
     }
 
     public static List<FilePath> getArtifactFiles(FilePath rootDirectory, String pattern, List<FilePath> results) throws IOException, InterruptedException {
+       listener.getLogger().println("Entering getArtifactFiles Function" + System.currentTimeMillis());
         FileFilter filter = new WildcardFileFilter(pattern.replace("**", "*"), IOCase.SYSTEM);
         List<FilePath> temp = rootDirectory.list(filter);
         if (!CollectionUtils.isEmpty(temp)) {
@@ -86,11 +87,14 @@ public class HygieiaUtils {
         temp = rootDirectory.list();
         if (!CollectionUtils.isEmpty(temp)) {
             for (FilePath currentItem : rootDirectory.list()) {
+                listener.getLogger().println("Current Path: "+ currentItem);
                 if (currentItem.isDirectory()) {
                     getArtifactFiles(currentItem, pattern, results);
                 }
             }
         }
+        listener.getLogger().println("Result directory path:" + results);
+        listener.getLogger().println("Exiting getArtifactFiles Function" + System.currentTimeMillis());
         return results;
     }
 
