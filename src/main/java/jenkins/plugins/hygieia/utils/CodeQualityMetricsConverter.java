@@ -34,6 +34,10 @@ public class CodeQualityMetricsConverter implements QualityVisitor<CodeQuality> 
 
     private final CodeQuality quality = new CodeQuality();
 
+    public CodeQualityMetricsConverter() {
+        quality.setType(CodeQualityType.StaticAnalysis);
+    }
+
     // note for static analysis names are ,,,violations
     // function tests..
 
@@ -52,7 +56,6 @@ public class CodeQualityMetricsConverter implements QualityVisitor<CodeQuality> 
             long timestamp = Math.max(quality.getTimestamp(), report.getTimestamp().toGregorianCalendar().getTimeInMillis());
             quality.setTimestamp(timestamp);
         }
-        quality.setType(CodeQualityType.StaticAnalysis);
 
         // finally produce the result
         this.sumMetrics(metricsMap);
