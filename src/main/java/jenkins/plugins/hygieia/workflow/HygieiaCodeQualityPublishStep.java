@@ -276,8 +276,6 @@ public class HygieiaCodeQualityPublishStep extends AbstractStepImpl {
         private <T> T unmarshall(Unmarshaller unmarshaller, FilePath path) throws IOException, InterruptedException, JAXBException, SAXException, ParserConfigurationException {
             SAXParserFactory spf = SAXParserFactory.newInstance();
             spf.setFeature("http://apache.org/xml/features/nonvalidating/load-external-dtd", false);
-            // prevent malicious xml attack (https://www.owasp.org/index.php/XML_External_Entity_(XXE)_Prevention_Cheat_Sheet#SAXTransformerFactory)
-            spf.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
             spf.setFeature("http://xml.org/sax/features/validation", false);
 
             XMLReader xmlReader = spf.newSAXParser().getXMLReader();
@@ -285,6 +283,7 @@ public class HygieiaCodeQualityPublishStep extends AbstractStepImpl {
                     path.read());
             SAXSource source = new SAXSource(xmlReader, inputSource);
 
+            //TODO prevent malicious xml attack, or ignore? (https://www.owasp.org/index.php/XML_External_Entity_(XXE)_Prevention_Cheat_Sheet#SAXTransformerFactory)
             return (T) unmarshaller.unmarshal(source);
         }
     }
