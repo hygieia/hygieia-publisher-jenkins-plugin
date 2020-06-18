@@ -158,7 +158,14 @@
             <artifactId>workflow-job</artifactId>
             <version>1.11</version>
         </dependency>
-
+        <!-- add dependency to enable local testing of the plugin-->
+        <dependency>
+            <groupId>org.jenkins-ci.main</groupId>
+            <artifactId>jenkins-war</artifactId>
+            <type>war</type>
+            <version>1.645</version>
+            <scope>test</scope>
+        </dependency>
         <!-- mockito for mocking in tests -->
         <dependency>
             <groupId>org.mockito</groupId>
