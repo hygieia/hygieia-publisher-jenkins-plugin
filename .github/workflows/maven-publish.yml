@@ -3,9 +3,9 @@
 
 name: Maven Package
 
-on:
-  commit:
-    types: [created]
+on: push
+#  commit:
+$    types: [created]
 
 jobs:
   build:
