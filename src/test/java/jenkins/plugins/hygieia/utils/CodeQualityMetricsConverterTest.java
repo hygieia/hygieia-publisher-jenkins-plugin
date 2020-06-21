@@ -375,6 +375,7 @@ public class CodeQualityMetricsConverterTest {
         report.accept(testee);
         CodeQuality codeQualityMetrics = testee.produceResult();
 
+        assertThat(codeQualityMetrics.getType()).isEqualTo(CodeQualityType.StaticAnalysis);
         assertThat(codeQualityMetrics.getMetrics()).extracting("name", "formattedValue", "value", "status")
                 .contains(
                         tuple("blocker_violations", "0", "0", CodeQualityMetricStatus.Ok),
@@ -394,6 +395,7 @@ public class CodeQualityMetricsConverterTest {
 
         CodeQuality codeQualityMetrics = testee.produceResult();
 
+        assertThat(codeQualityMetrics.getType()).isEqualTo(CodeQualityType.StaticAnalysis);
         assertThat(codeQualityMetrics.getMetrics()).extracting("name", "formattedValue", "value", "status")
                 .contains(
                         tuple("blocker_violations", "20", "20", CodeQualityMetricStatus.Alert),
@@ -411,6 +413,7 @@ public class CodeQualityMetricsConverterTest {
 
         CodeQuality calculatedCodeQuality = testee.produceResult();
 
+        assertThat(calculatedCodeQuality.getType()).isEqualTo(CodeQualityType.StaticAnalysis);
         assertThat(calculatedCodeQuality.getMetrics()).extracting("name", "formattedValue", "value", "status")
                 .contains(
                         tuple("total_lines_covered", "0", "0", CodeQualityMetricStatus.Ok),
@@ -479,6 +482,7 @@ public class CodeQualityMetricsConverterTest {
 
         CodeQuality codeQualityMetrics = testee.produceResult();
 
+        assertThat(codeQualityMetrics.getType()).isEqualTo(CodeQualityType.StaticAnalysis);
         assertThat(codeQualityMetrics.getMetrics()).extracting("name", "formattedValue", "value", "status")
                 .contains(
                         tuple("blocker_violations", "9", "9", CodeQualityMetricStatus.Alert),
@@ -496,6 +500,7 @@ public class CodeQualityMetricsConverterTest {
 
         CodeQuality codeQualityMetrics = testee.produceResult();
 
+        assertThat(codeQualityMetrics.getType()).isEqualTo(CodeQualityType.StaticAnalysis);
         assertThat(codeQualityMetrics.getMetrics()).extracting("name", "formattedValue", "value", "status")
                 .contains(
                         tuple("blocker_violations", "0", "0", CodeQualityMetricStatus.Ok),
@@ -515,6 +520,7 @@ public class CodeQualityMetricsConverterTest {
 
         CodeQuality codeQualityMetrics = testee.produceResult();
 
+        assertThat(codeQualityMetrics.getType()).isEqualTo(CodeQualityType.StaticAnalysis);
         assertThat(codeQualityMetrics.getMetrics()).extracting("name", "formattedValue", "value", "status")
                 .contains(
                         tuple("blocker_violations", "0", "0", CodeQualityMetricStatus.Ok),
@@ -536,6 +542,7 @@ public class CodeQualityMetricsConverterTest {
 
         CodeQuality codeQualityMetrics = testee.produceResult();
 
+        assertThat(codeQualityMetrics.getType()).isEqualTo(CodeQualityType.StaticAnalysis);
         assertThat(codeQualityMetrics.getMetrics()).extracting("name", "formattedValue", "value", "status")
                 .contains(
                         tuple("blocker_violations", "0", "0", CodeQualityMetricStatus.Ok),

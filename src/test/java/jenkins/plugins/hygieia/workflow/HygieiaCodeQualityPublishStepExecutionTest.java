@@ -13,6 +13,7 @@ import hudson.remoting.VirtualChannel;
 import jenkins.plugins.hygieia.HygieiaPublisher;
 import jenkins.plugins.hygieia.HygieiaResponse;
 import jenkins.plugins.hygieia.HygieiaService;
+import org.apache.http.HttpStatus;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -28,6 +29,7 @@ import org.powermock.modules.junit4.PowerMockRunner;
 import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBException;
 import java.io.File;
+import java.io.PrintStream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.*;
@@ -53,6 +55,8 @@ public class HygieiaCodeQualityPublishStepExecutionTest {
     @Mock
     private HygieiaService mockHygieiaService;
 
+    @Mock
+    private PrintStream mockPrintStream;
 
     @InjectMocks
     private HygieiaCodeQualityPublishStep.HygieiaCodeQualityPublisherStepExecution subject;
@@ -63,10 +67,12 @@ public class HygieiaCodeQualityPublishStepExecutionTest {
                 FindBugsXmlReport.class, CheckstyleReport.class, PmdReport.class);
         subject.filepath = new FilePath(mockChannel,"remote");
 
+
         when(mockStep.getContext()).thenReturn(context);
+        when(listener.getLogger()).thenReturn(mockPrintStream);
     }
 
-    private void expectationsForBuildJob(){
+    private void expectationsForBuildJob(int codeQualityStatus){
         HygieiaPublisher.DescriptorImpl mockDesc = mock(HygieiaPublisher.DescriptorImpl.class);
         when(mockStep.getHygieiaDesc()).thenReturn(mockDesc);
         when(mockDesc.getHygieiaJenkinsName()).thenReturn("jenkins");
@@ -87,12 +93,16 @@ public class HygieiaCodeQualityPublishStepExecutionTest {
         when(mockHygieiaService.publishBuildData(any(BuildDataCreateRequest.class))).thenReturn(mockBuildResponse);
 
         when(mockBuildResponse.getResponseValue()).thenReturn("buildCollectorId");
+        HygieiaResponse mockCodeResponse = mock(HygieiaResponse.class);
+        when(mockCodeResponse.getResponseCode()).thenReturn(codeQualityStatus);
+        when(mockCodeResponse.toString()).thenReturn("response2.toString");
+        when(mockHygieiaService.publishSonarResults(any(CodeQualityCreateRequest.class))).thenReturn(mockCodeResponse);
+
     }
 
     @Test
     public void linksBuildJobAndCodeAnalysisTogether() throws Throwable {
-        this.expectationsForBuildJob();
-
+        this.expectationsForBuildJob(HttpStatus.SC_CREATED);
 
         subject.run();
 
@@ -105,11 +115,26 @@ public class HygieiaCodeQualityPublishStepExecutionTest {
         assertThat(capturedRequest.getProjectName()).isEqualTo("jenkinsFullName");
         assertThat(capturedRequest.getNiceName()).isEqualTo("jenkins");
         assertThat(capturedRequest.getType()).isEqualTo(CodeQualityType.StaticAnalysis);
+
+        verify(mockPrintStream).println("Hygieia: Published Complete Metric Data. response2.toString");
+
+    }
+
+    @Test
+    public void failureToPublishCodeDataIsLogged() throws Exception {
+        this.expectationsForBuildJob(HttpStatus.SC_BAD_REQUEST);
+
+
+        subject.run();
+
+        verify(mockPrintStream).println("Hygieia: Failed Publishing Complete Metric Data. response2.toString");
+
     }
 
     @Test
     public void publishesBuildData() throws Throwable {
-        this.expectationsForBuildJob();
+        this.expectationsForBuildJob(HttpStatus.SC_CREATED);
+
 
         subject.run();
 
@@ -119,11 +144,13 @@ public class HygieiaCodeQualityPublishStepExecutionTest {
         BuildDataCreateRequest capturedRequest = captor.getValue();
         assertThat(capturedRequest.getJobUrl()).isEqualTo("http://jenkins.url.com/parent/job/jenkinsJob/");
 
+        verify(mockPrintStream).println("Produced 0 metrics, publishing to Hygieia");
+
     }
 
     @Test
     public void runCollectsJunitResultFromJob() throws Throwable {
-        this.expectationsForBuildJob();
+        this.expectationsForBuildJob(HttpStatus.SC_CREATED);
         when(mockStep.getJunitFilePattern()).thenReturn("**/target/junit.xml");
         FilePath[] files = new FilePath[]{new FilePath(new File(this.getClass().getResource("/junit.xml").toURI()))};
 
@@ -135,11 +162,12 @@ public class HygieiaCodeQualityPublishStepExecutionTest {
         verify(mockHygieiaService).publishSonarResults(captor.capture());
 
         assertThat(captor.getValue().getMetrics()).hasSize(4);
+        verify(mockPrintStream).println("Analysing 1 junit file(s)");
     }
 
     @Test
     public void copesWithJunitNotDefined() throws Exception {
-        this.expectationsForBuildJob();
+        this.expectationsForBuildJob(HttpStatus.SC_CREATED);
 
         when(mockStep.getJunitFilePattern()).thenReturn(null);
 
@@ -149,12 +177,13 @@ public class HygieiaCodeQualityPublishStepExecutionTest {
         verify(mockHygieiaService).publishSonarResults(captor.capture());
 
         assertThat(captor.getValue().getMetrics()).hasSize(0);
+        verify(mockPrintStream).println("Skipping junit analysis");
 
     }
 
     @Test
     public void copesWithJunitEmpty() throws Exception {
-        this.expectationsForBuildJob();
+        this.expectationsForBuildJob(HttpStatus.SC_CREATED);
 
         when(mockStep.getJunitFilePattern()).thenReturn("");
 
@@ -164,12 +193,13 @@ public class HygieiaCodeQualityPublishStepExecutionTest {
         verify(mockHygieiaService).publishSonarResults(captor.capture());
 
         assertThat(captor.getValue().getMetrics()).hasSize(0);
+        verify(mockPrintStream).println("Skipping junit analysis");
 
     }
 
     @Test
     public void ignoresFileIncorrectlyIdentified() throws Throwable {
-        this.expectationsForBuildJob();
+        this.expectationsForBuildJob(HttpStatus.SC_CREATED);
 
         when(mockStep.getJunitFilePattern()).thenReturn("**/target/junit.xml");
         // javadoc says it may be empty but not null
@@ -183,11 +213,13 @@ public class HygieiaCodeQualityPublishStepExecutionTest {
         verify(mockHygieiaService).publishSonarResults(captor.capture());
 
         assertThat(captor.getValue().getMetrics()).hasSize(0);
+        verify(mockPrintStream).println("Analysing 0 junit file(s)");
+
     }
 
     @Test
     public void copesWithEmptyFile() throws Throwable {
-        this.expectationsForBuildJob();
+        this.expectationsForBuildJob(HttpStatus.SC_CREATED);
 
         when(mockStep.getJunitFilePattern()).thenReturn("**/target/junit.xml");
         FilePath[] files = new FilePath[]{};
@@ -200,11 +232,12 @@ public class HygieiaCodeQualityPublishStepExecutionTest {
         verify(mockHygieiaService).publishSonarResults(captor.capture());
 
         assertThat(captor.getValue().getMetrics()).hasSize(0);
+        verify(mockPrintStream).println("Analysing 0 junit file(s)");
     }
 
     @Test
     public void doesPmd() throws Throwable {
-        this.expectationsForBuildJob();
+        this.expectationsForBuildJob(HttpStatus.SC_CREATED);
 
         when(mockStep.getPmdFilePattern()).thenReturn("**/target/pmd.xml");
         FilePath[] files = new FilePath[]{new FilePath(new File(this.getClass().getResource("/pmd.xml").toURI()))};
@@ -217,11 +250,12 @@ public class HygieiaCodeQualityPublishStepExecutionTest {
         verify(mockHygieiaService).publishSonarResults(captor.capture());
 
         assertThat(captor.getValue().getMetrics()).hasSize(4);
+        verify(mockPrintStream).println("Analysing 1 pmd file(s)");
     }
 
     @Test
     public void pmdNull() throws Exception{
-        this.expectationsForBuildJob();
+        this.expectationsForBuildJob(HttpStatus.SC_CREATED);
 
         when(mockStep.getPmdFilePattern()).thenReturn(null);
 
@@ -231,11 +265,12 @@ public class HygieiaCodeQualityPublishStepExecutionTest {
         verify(mockHygieiaService).publishSonarResults(captor.capture());
 
         assertThat(captor.getValue().getMetrics()).hasSize(0);
+        verify(mockPrintStream).println("Skipping pmd analysis");
     }
 
     @Test
     public void pmdEmpty() throws Exception{
-        this.expectationsForBuildJob();
+        this.expectationsForBuildJob(HttpStatus.SC_CREATED);
 
         when(mockStep.getPmdFilePattern()).thenReturn("");
 
@@ -245,11 +280,12 @@ public class HygieiaCodeQualityPublishStepExecutionTest {
         verify(mockHygieiaService).publishSonarResults(captor.capture());
 
         assertThat(captor.getValue().getMetrics()).hasSize(0);
+        verify(mockPrintStream).println("Skipping pmd analysis");
     }
 
     @Test
     public void doesFindbugs() throws Throwable {
-        this.expectationsForBuildJob();
+        this.expectationsForBuildJob(HttpStatus.SC_CREATED);
 
         when(mockStep.getFindbugsFilePattern()).thenReturn("**/target/findbugs.xml");
         FilePath[] files = new FilePath[]{new FilePath(new File(this.getClass().getResource("/findbugs.xml").toURI()))};
@@ -262,11 +298,12 @@ public class HygieiaCodeQualityPublishStepExecutionTest {
         verify(mockHygieiaService).publishSonarResults(captor.capture());
 
         assertThat(captor.getValue().getMetrics()).hasSize(4);
+        verify(mockPrintStream).println("Analysing 1 findbugs file(s)");
     }
 
     @Test
     public void findbugsNull() throws Exception{
-        this.expectationsForBuildJob();
+        this.expectationsForBuildJob(HttpStatus.SC_CREATED);
 
         when(mockStep.getFindbugsFilePattern()).thenReturn(null);
 
@@ -276,11 +313,12 @@ public class HygieiaCodeQualityPublishStepExecutionTest {
         verify(mockHygieiaService).publishSonarResults(captor.capture());
 
         assertThat(captor.getValue().getMetrics()).hasSize(0);
+        verify(mockPrintStream).println("Skipping findbugs analysis");
     }
 
     @Test
     public void findbugsEmpty() throws Exception{
-        this.expectationsForBuildJob();
+        this.expectationsForBuildJob(HttpStatus.SC_CREATED);
 
         when(mockStep.getFindbugsFilePattern()).thenReturn("");
 
@@ -290,11 +328,12 @@ public class HygieiaCodeQualityPublishStepExecutionTest {
         verify(mockHygieiaService).publishSonarResults(captor.capture());
 
         assertThat(captor.getValue().getMetrics()).hasSize(0);
+        verify(mockPrintStream).println("Skipping findbugs analysis");
     }
 
     @Test
     public void doesCheckstyle() throws Throwable {
-        this.expectationsForBuildJob();
+        this.expectationsForBuildJob(HttpStatus.SC_CREATED);
 
         when(mockStep.getCheckstyleFilePattern()).thenReturn("**/target/checkstyle-report.xml");
         FilePath[] files = new FilePath[]{new FilePath(new File(this.getClass().getResource("/checkstyle-report.xml").toURI()))};
@@ -307,11 +346,12 @@ public class HygieiaCodeQualityPublishStepExecutionTest {
         verify(mockHygieiaService).publishSonarResults(captor.capture());
 
         assertThat(captor.getValue().getMetrics()).hasSize(4);
+        verify(mockPrintStream).println("Analysing 1 checkstyle file(s)");
     }
 
     @Test
     public void checkstyleNull() throws Exception{
-        this.expectationsForBuildJob();
+        this.expectationsForBuildJob(HttpStatus.SC_CREATED);
 
         when(mockStep.getCheckstyleFilePattern()).thenReturn(null);
 
@@ -321,11 +361,12 @@ public class HygieiaCodeQualityPublishStepExecutionTest {
         verify(mockHygieiaService).publishSonarResults(captor.capture());
 
         assertThat(captor.getValue().getMetrics()).hasSize(0);
+        verify(mockPrintStream).println("Skipping checkstyle analysis");
     }
 
     @Test
     public void checkstyleEmpty() throws Exception{
-        this.expectationsForBuildJob();
+        this.expectationsForBuildJob(HttpStatus.SC_CREATED);
 
         when(mockStep.getCheckstyleFilePattern()).thenReturn("");
 
@@ -335,11 +376,12 @@ public class HygieiaCodeQualityPublishStepExecutionTest {
         verify(mockHygieiaService).publishSonarResults(captor.capture());
 
         assertThat(captor.getValue().getMetrics()).hasSize(0);
+        verify(mockPrintStream).println("Skipping checkstyle analysis");
     }
 
     @Test
     public void doesJacoco() throws Throwable {
-        this.expectationsForBuildJob();
+        this.expectationsForBuildJob(HttpStatus.SC_CREATED);
 
         when(mockStep.getJacocoFilePattern()).thenReturn("**/target/jacoco.xml");
         FilePath[] files = new FilePath[]{new FilePath(new File(this.getClass().getResource("/jacoco.xml").toURI()))};
@@ -352,11 +394,12 @@ public class HygieiaCodeQualityPublishStepExecutionTest {
         verify(mockHygieiaService).publishSonarResults(captor.capture());
 
         assertThat(captor.getValue().getMetrics()).hasSize(6);
+        verify(mockPrintStream).println("Analysing 1 jacoco file(s)");
     }
 
     @Test
     public void jacocoNull() throws Exception{
-        this.expectationsForBuildJob();
+        this.expectationsForBuildJob(HttpStatus.SC_CREATED);
 
         when(mockStep.getJacocoFilePattern()).thenReturn(null);
 
@@ -366,11 +409,12 @@ public class HygieiaCodeQualityPublishStepExecutionTest {
         verify(mockHygieiaService).publishSonarResults(captor.capture());
 
         assertThat(captor.getValue().getMetrics()).hasSize(0);
+        verify(mockPrintStream).println("Skipping jacoco analysis");
     }
 
     @Test
     public void jacocoEmpty() throws Exception{
-        this.expectationsForBuildJob();
+        this.expectationsForBuildJob(HttpStatus.SC_CREATED);
 
         when(mockStep.getJacocoFilePattern()).thenReturn("");
 
@@ -380,6 +424,7 @@ public class HygieiaCodeQualityPublishStepExecutionTest {
         verify(mockHygieiaService).publishSonarResults(captor.capture());
 
         assertThat(captor.getValue().getMetrics()).hasSize(0);
+        verify(mockPrintStream).println("Skipping jacoco analysis");
     }
 
 
