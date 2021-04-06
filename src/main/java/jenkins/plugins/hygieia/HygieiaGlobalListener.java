@@ -68,8 +68,6 @@ public class HygieiaGlobalListener extends RunListener<Run<?, ?>> {
         for (String apiEndPoint : apiEndpints) {
             if (StringUtils.isEmpty(apiEndPoint)) { continue; }
             HygieiaService hygieiaService = getHygieiaService(hygieiaGlobalListenerDescriptor, apiEndPoint);
-           // hygieiaService.publishBuildDataV3()
-
             BuildDataCreateRequest buildRequest = new BuildDataCreateRequest();
             buildRequest.setJobName(HygieiaUtils.getJobPath(run));
             buildRequest.setBuildUrl(HygieiaUtils.getBuildUrl(run));
