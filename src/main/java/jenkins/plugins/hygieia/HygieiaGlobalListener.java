@@ -3,6 +3,7 @@ package jenkins.plugins.hygieia;
 import com.capitalone.dashboard.misc.HygieiaException;
 import com.capitalone.dashboard.model.BuildStage;
 import com.capitalone.dashboard.model.BuildStatus;
+import com.capitalone.dashboard.request.BuildDataCreateRequest;
 import com.capitalone.dashboard.request.CodeQualityCreateRequest;
 import com.capitalone.dashboard.request.GenericCollectorItemCreateRequest;
 import com.capitalone.dashboard.response.BuildDataCreateResponse;
@@ -42,6 +43,58 @@ public class HygieiaGlobalListener extends RunListener<Run<?, ?>> {
     }
 
     @Override
+    public void onStarted(Run run, TaskListener listener) {
+        super.onStarted(run, listener);
+        HygieiaPublisher.DescriptorImpl hygieiaGlobalListenerDescriptor = getDescriptor();
+        boolean showConsoleOutput = hygieiaGlobalListenerDescriptor.isShowConsoleOutput();
+        boolean publish = hygieiaGlobalListenerDescriptor.isHygieiaPublishBuildDataGlobal()
+                || hygieiaGlobalListenerDescriptor.isHygieiaPublishSonarDataGlobal()
+                || CollectionUtils.isNotEmpty(hygieiaGlobalListenerDescriptor.getHygieiaPublishGenericCollectorItems());
+        String rawApiEndopints = StringUtils.trimToEmpty(hygieiaGlobalListenerDescriptor.getHygieiaAPIUrl());
+        List<String> apiEndpints = Arrays.asList(rawApiEndopints.split(HygieiaUtils.SEPERATOR));
+
+        if (CollectionUtils.isEmpty(apiEndpints)) {
+            if (showConsoleOutput) { listener.getLogger().println("Hygieia: Skipping Automatic publish to Hygieia as no service endpoints were configured. "); }
+            return;
+        }
+
+        if(!publish) {
+            if (showConsoleOutput) { listener.getLogger().println("Hygieia: Skipping Automatic publish to Hygieia as publish is disabled in Global Configuration. "); }
+            return;
+        }
+        //publish the build started event
+        final long startTime = run.getStartTimeInMillis();
+        int index = 0;
+        for (String apiEndPoint : apiEndpints) {
+            if (StringUtils.isEmpty(apiEndPoint)) { continue; }
+            HygieiaService hygieiaService = getHygieiaService(hygieiaGlobalListenerDescriptor, apiEndPoint);
+           // hygieiaService.publishBuildDataV3()
+
+            BuildDataCreateRequest buildRequest = new BuildDataCreateRequest();
+            buildRequest.setJobName(HygieiaUtils.getJobPath(run));
+            buildRequest.setBuildUrl(HygieiaUtils.getBuildUrl(run));
+            buildRequest.setJobUrl(HygieiaUtils.getJobUrl(run));
+            buildRequest.setInstanceUrl(HygieiaUtils.getInstanceUrl(run, listener));
+            buildRequest.setNumber(HygieiaUtils.getBuildNumber(run));
+            buildRequest.setStartTime(startTime);
+            buildRequest.setBuildStatus(BuildStatus.InProgress.toString());
+            HygieiaResponse buildResponse = hygieiaService.publishBuildDataV3(buildRequest);
+            if (buildResponse.getResponseCode() == HttpStatus.SC_CREATED) {
+                try {
+                    BuildDataCreateResponse buildDataResponse = HygieiaUtils.convertJsonToObject(buildResponse.getResponseValue(), BuildDataCreateResponse.class);
+                    String buildString = String.format("%s,%s", buildDataResponse.getId().toString(), buildDataResponse.getCollectorItemId().toString());
+
+                    if (showConsoleOutput) { listener.getLogger().println("Hygieia: Auto Published Build Complete Data to " + apiEndPoint + " . Response Code: " + buildResponse.getResponseCode() + ". " + buildString); }
+                } catch (IOException e) {
+                    if (showConsoleOutput) { listener.getLogger().println("Hygieia: Publishing Build Complete Data to " + apiEndPoint + " , however error reading response. " + '\n' + e.getMessage()); }
+                }
+            } else {
+                if (showConsoleOutput) { listener.getLogger().println("Hygieia: Failed Publishing Build Complete Data to " + apiEndPoint +" . " + buildResponse.toString()); }
+            }
+        }
+    }
+
+    @Override
     public void onFinalized(hudson.model.Run<?, ?> run) {
         super.onFinalized(run);
     }
@@ -61,7 +114,7 @@ public class HygieiaGlobalListener extends RunListener<Run<?, ?>> {
         if(!publish) { super.onCompleted(run, listener); return; }
 
         //added to print the Status of Jenkins Job before attempting to publish to Hygieia
-        listener.getLogger().println("Finished: " + run.getResult());
+        if(showConsoleOutput) { listener.getLogger().println("Finished: " + run.getResult()); }
 
         if (HygieiaUtils.isJobExcluded(run.getParent().getName(), hygieiaGlobalListenerDescriptor.getHygieiaExcludeJobNames())) {
             if (showConsoleOutput) { listener.getLogger().println("Hygieia: Skipping Automatic publish to Hygieia as the job was excluded in global configuration. "); }
@@ -129,11 +182,11 @@ public class HygieiaGlobalListener extends RunListener<Run<?, ?>> {
             buildStages = process_node_links(run, listener, hygieiaGlobalListenerDescriptor, hygieiaService,buildStages);
             buildStages = process_logs(run, listener, hygieiaGlobalListenerDescriptor, hygieiaService,buildStages);
         }catch (Exception e){
-            listener.getLogger().println("Hygieia: Cause for Jenkins API call failure : " + ExceptionUtils.getRootCauseMessage(e));
+            if(showConsoleOutput) { listener.getLogger().println("Hygieia: Cause for Jenkins API call failure : " + ExceptionUtils.getRootCauseMessage(e)); }
         }
 
         String startedBy = HygieiaUtils.getUserID(run, listener);
-        listener.getLogger().println("Hygieia: This build was initiated by " + startedBy);
+        if(showConsoleOutput) { listener.getLogger().println("Hygieia: This build was initiated by " + startedBy); }
         HygieiaResponse buildResponse = hygieiaService.publishBuildDataV3(new BuildBuilder().createBuildRequestFromRun(run, hygieiaGlobalListenerDescriptor.getHygieiaJenkinsName(),
                 listener, buildStatus, true, buildStages, startedBy));
         if (buildResponse.getResponseCode() == HttpStatus.SC_CREATED) {
