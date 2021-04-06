@@ -238,7 +238,7 @@ public class HygieiaGlobalListenerTest {
         setup();
         when(mockDescriptor.isHygieiaPublishBuildDataGlobal()).thenReturn(false);
         when(mockDescriptor.isHygieiaPublishSonarDataGlobal()).thenReturn(false);
-        HygieiaPublisher.GenericCollectorItem item = new HygieiaPublisher.GenericCollectorItem("mytool", "some pattern");
+        HygieiaPublisher.GenericCollectorItem item = new HygieiaPublisher.GenericCollectorItem("mytool", "some pattern", false);
 
         when(mockDescriptor.getHygieiaPublishGenericCollectorItems()).thenReturn(Lists.newArrayList(item));
         when(mockRun.getResult()).thenReturn(Result.SUCCESS);
@@ -259,7 +259,7 @@ public class HygieiaGlobalListenerTest {
         setup();
         when(mockDescriptor.isHygieiaPublishBuildDataGlobal()).thenReturn(false);
         when(mockDescriptor.isHygieiaPublishSonarDataGlobal()).thenReturn(false);
-        HygieiaPublisher.GenericCollectorItem item = new HygieiaPublisher.GenericCollectorItem("mytool", "some pattern");
+        HygieiaPublisher.GenericCollectorItem item = new HygieiaPublisher.GenericCollectorItem("mytool", "some pattern", false);
 
         when(mockDescriptor.getHygieiaPublishGenericCollectorItems()).thenReturn(Lists.newArrayList(item));
         when(mockRun.getResult()).thenReturn(Result.SUCCESS);
