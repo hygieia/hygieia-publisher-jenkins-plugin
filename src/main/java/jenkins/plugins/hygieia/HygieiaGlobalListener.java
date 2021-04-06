@@ -309,7 +309,6 @@ public class HygieiaGlobalListener extends RunListener<Run<?, ?>> {
         if (CollectionUtils.isEmpty(hygieiaGlobalListenerDescriptor.getHygieiaPublishGenericCollectorItems())) { return; }
         boolean showConsoleOutput = hygieiaGlobalListenerDescriptor.isShowConsoleOutput();
         List<HygieiaPublisher.GenericCollectorItem> publishItems = hygieiaGlobalListenerDescriptor.getHygieiaPublishGenericCollectorItems().stream().filter(p -> !p.isPublishOnStart()).collect(Collectors.toList());
-        System.out.println(" Size of Publish Items : " + CollectionUtils.size(publishItems));
         publishItems(run, listener, publishItems, showConsoleOutput, hygieiaService, convertedBuildResponseString);
     }
 
@@ -317,7 +316,6 @@ public class HygieiaGlobalListener extends RunListener<Run<?, ?>> {
         if (CollectionUtils.isEmpty(hygieiaGlobalListenerDescriptor.getHygieiaPublishGenericCollectorItems())) { return; }
         boolean showConsoleOutput = hygieiaGlobalListenerDescriptor.isShowConsoleOutput();
         List<HygieiaPublisher.GenericCollectorItem> publishItems = hygieiaGlobalListenerDescriptor.getHygieiaPublishGenericCollectorItems().stream().filter(p -> p.isPublishOnStart()).collect(Collectors.toList());
-        System.out.println(" Size of Publish Items : " + CollectionUtils.size(publishItems));
         publishItems(run, listener, publishItems, showConsoleOutput, hygieiaService, convertedBuildResponseString);
     }
 
