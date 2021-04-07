@@ -189,7 +189,14 @@ public class SonarBuilder {
             sonarBuildLink = extractSonarProjectURLFromLogs(run);
             if (!StringUtils.isEmpty(sonarBuildLink)) {
                 String sonarProjectName = getSonarProjectName(sonarBuildLink);
-                sonarServer = sonarBuildLink.substring(0, sonarBuildLink.indexOf("/dashboard/index/" + sonarProjectName));
+                /*
+                * Sonar Version change has changed the way it has logged in jenkins console logs
+                * ex for version 6.3 - [INFO] ANALYSIS SUCCESSFUL, you can browse http://localhost:9000/dashboard/index/com.acme.some.package:project
+                * ex for version 7.0 - [INFO] ANALYSIS SUCCESSFUL, you can browse http://localhost:9000/dashboard?id=com.acme.some.package:project
+                *
+                * by modifying the indexOf condition to look for anything that is before /dashboard we can retrieve the sonar server information.
+                * */
+                sonarServer = sonarBuildLink.substring(0, sonarBuildLink.indexOf("/dashboard"));
                 sonarVersion = getSonarVersion(listener, sonarServer, useProxy);
                 sonarProjectID = getSonarProjectID(sonarProjectName, sonarVersion, sonarServer, useProxy);
             }
@@ -275,8 +282,6 @@ public class SonarBuilder {
         }
         return null;
     }
-
-
     private CodeQualityCreateRequest getSonarMetricsPost6_3(String sonarServer, String sonarProjectID, String sonarBuildLink, boolean useProxy, String jenkinsName, String buildId) throws ParseException {
         String url = String.format(
                 sonarServer + URL_METRICS_FRAGMENT_POST6_3, sonarProjectID, METRICS_POST6_3);
@@ -335,7 +340,6 @@ public class SonarBuilder {
         }
         return null;
     }
-
 
     private CodeQualityMetricStatus metricStatus(String status) {
         if (StringUtils.isBlank(status)) {

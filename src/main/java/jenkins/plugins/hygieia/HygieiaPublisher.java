@@ -295,15 +295,17 @@ public class HygieiaPublisher extends Notifier {
     }
 
         public static class GenericCollectorItem extends AbstractDescribableImpl<GenericCollectorItem> {
-//    public static class GenericCollectorItem {
+
         public final String toolName;
         public final String pattern;
+        public final boolean publishOnStart;
 
 
         @DataBoundConstructor
-        public GenericCollectorItem(String toolName, String pattern) {
+        public GenericCollectorItem(String toolName, String pattern, boolean publishOnStart) {
             this.toolName = toolName;
             this.pattern = pattern;
+            this.publishOnStart = publishOnStart;
            }
 
         public String getToolName() {
@@ -314,6 +316,8 @@ public class HygieiaPublisher extends Notifier {
             return pattern;
         }
 
+        public boolean isPublishOnStart() { return publishOnStart; }
+
         @Extension
         public static class DescriptorImpl extends Descriptor<GenericCollectorItem> {
             @Override
@@ -321,7 +325,6 @@ public class HygieiaPublisher extends Notifier {
                 return "";
             }
         }
-
     }
 
     @DataBoundConstructor
@@ -567,7 +570,7 @@ public class HygieiaPublisher extends Notifier {
                 bProxy = this.useProxy;
             }
 
-            List<String> apiEndpoints = Arrays.asList(hostUrl.split(HygieiaUtils.SEPERATOR));
+            String[] apiEndpoints = hostUrl.split(HygieiaUtils.SEPERATOR);
             boolean SUCCESS = true;
             String ERROR_ENDPOINTS = " ";
             for(String apiEndpoint : apiEndpoints) {

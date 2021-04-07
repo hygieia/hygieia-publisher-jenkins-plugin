@@ -46,10 +46,11 @@
             <f:checkbox field="captureLogs" name="captureLogs" checked="${descriptor.isCaptureLogs()}" />
     </f:entry>
 
-    <f:entry title="Publish custom collector items (tool name : regex)" help="/plugin/hygieia-publisher/help-globalConfig-hygieiaPublishBuildData.html">
+    <f:entry title="Publish custom collector items (tool name : regex : publishOnStart)" help="/plugin/hygieia-publisher/help-globalConfig-hygieiaPublishGenericItems.html">
         <f:repeatable var="hygieiaPublishGenericCollectorItems" field="hygieiaPublishGenericCollectorItems" name="hygieiaPublishGenericCollectorItems" >
             <f:textbox field="toolName" name="toolName" clazz="required" checkMessage="Required!" value="${hygieiaPublishGenericCollectorItems.toolName}"/>
             <f:textbox field="pattern" name="pattern" clazz="required" checkMessage="Required!" value="${hygieiaPublishGenericCollectorItems.pattern}"/>
+            <f:checkbox field="publishOnStart" name="publishOnStart" checked="${hygieiaPublishGenericCollectorItems.publishOnStart}" />
             <div align="right">
                 <f:repeatableDeleteButton value="Delete"/>
             </div>
