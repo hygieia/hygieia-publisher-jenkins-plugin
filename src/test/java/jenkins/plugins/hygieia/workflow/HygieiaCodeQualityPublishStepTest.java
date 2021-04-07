@@ -5,8 +5,9 @@ import org.junit.Test;
 
 import javax.xml.bind.JAXBException;
 
+import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.CoreMatchers.is;
-import static org.junit.Assert.*;
+import static org.hamcrest.MatcherAssert.assertThat;
 
 
 public class HygieiaCodeQualityPublishStepTest {
@@ -14,8 +15,7 @@ public class HygieiaCodeQualityPublishStepTest {
     @Test
     public void descriptorImplDescribesCorrectStep() {
         HygieiaCodeQualityPublishStep.DescriptorImpl description = new HygieiaCodeQualityPublishStep.DescriptorImpl();
-
-        assertThat(description.getExecutionType(),is(HygieiaCodeQualityPublishStep.HygieiaCodeQualityPublisherStepExecution.class.getClass()));
+        assertThat(description.getExecutionType().getClass(),instanceOf(HygieiaCodeQualityPublishStep.HygieiaCodeQualityPublisherStepExecution.class.getClass()));
     }
 
     @Test
@@ -37,7 +37,7 @@ public class HygieiaCodeQualityPublishStepTest {
     public void configurationInOuterDoesNotRequireAnything() throws JAXBException {
         HygieiaCodeQualityPublishStep step = new HygieiaCodeQualityPublishStep();
 
-        assertThat(step,is(CoreMatchers.<HygieiaCodeQualityPublishStep>notNullValue()));
+        assertThat(step,is(CoreMatchers.notNullValue()));
 
     }
 
