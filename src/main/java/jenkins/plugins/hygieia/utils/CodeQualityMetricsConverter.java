@@ -4,6 +4,7 @@ import com.capitalone.dashboard.model.CodeQuality;
 import com.capitalone.dashboard.model.CodeQualityMetric;
 import com.capitalone.dashboard.model.CodeQualityMetricStatus;
 import com.capitalone.dashboard.model.CodeQualityType;
+import com.capitalone.dashboard.model.TestSuite;
 import com.capitalone.dashboard.model.quality.*;
 import org.apache.commons.lang3.tuple.Pair;
 import org.springframework.stereotype.Component;
@@ -56,6 +57,34 @@ public class CodeQualityMetricsConverter implements QualityVisitor<CodeQuality> 
             long timestamp = Math.max(quality.getTimestamp(), report.getTimestamp().toGregorianCalendar().getTimeInMillis());
             quality.setTimestamp(timestamp);
         }
+
+        // finally produce the result
+        this.sumMetrics(metricsMap);
+
+    }
+
+    @Override
+    public void visit(JunitXmlReportV2 junitXmlReportV2) {
+        Map<String, Pair<Integer, CodeQualityMetricStatus>> metricsMap = new HashMap<>();
+
+        int errors = 0;
+        int failures = 0;
+        int tests = 0;
+        int successful = 0;
+
+        if (null!= junitXmlReportV2.getTestsuite()) {
+            for (JunitXmlReportV2.TestSuite suite : junitXmlReportV2.getTestsuite()) {
+                errors += suite.getErrors();
+                failures += suite.getFailures();
+                tests += suite.getTests();
+                successful += (suite.getTests() - suite.getErrors() - suite.getFailures());
+            }
+        }
+
+        metricsMap.put(TOTAL_NO_OF_TESTS, Pair.of(tests, CodeQualityMetricStatus.Ok));
+        metricsMap.put(TEST_FAILURES, Pair.of(failures, failures > 0 ? CodeQualityMetricStatus.Warning:CodeQualityMetricStatus.Ok));
+        metricsMap.put(TEST_ERRORS, Pair.of(errors,  errors > 0 ? CodeQualityMetricStatus.Alert : CodeQualityMetricStatus.Ok));
+        metricsMap.put(TEST_SUCCESS_DENSITY, Pair.of(successful, CodeQualityMetricStatus.Ok));
 
         // finally produce the result
         this.sumMetrics(metricsMap);
