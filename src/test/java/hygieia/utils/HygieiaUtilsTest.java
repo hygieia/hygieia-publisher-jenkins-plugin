@@ -65,7 +65,7 @@ public class HygieiaUtilsTest {
     public void getBuildStages_describe_one_build() throws HygieiaException {
         String json = loadJson("json/wfapi-describe-one-build.json");
         LinkedList<BuildStage> buildStages = HygieiaUtils.getBuildStages(json);
-        Assertions.assertThat(buildStages.get(0)).isEqualToComparingFieldByField(generateExpected("json/build-stage.json"));
+        Assertions.assertThat(buildStages.get(0)).isEqualToIgnoringGivenFields(generateExpected("json/build-stage.json"),"upsertTime");
         assertThat(buildStages.size()).isEqualTo(4);
     }
 
