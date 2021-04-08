@@ -387,6 +387,7 @@ public class HygieiaPublisher extends Notifier {
         private volatile boolean showConsoleOutput;
         private volatile boolean captureLogs;
         private volatile GenericCollectorItem[] hygieiaPublishGenericCollectorItems =  new GenericCollectorItem[0];
+        private volatile String hygieiaBuildIdentifier;
         public String pluginVersionInfo;
 
         private String deployApplicationNameSelected;
@@ -474,6 +475,14 @@ public class HygieiaPublisher extends Notifier {
             save();
         }
 
+        public String getHygieiaBuildIdentifier() {
+            return hygieiaBuildIdentifier;
+        }
+
+        public void setHygieiaBuildIdentifier(String hygieiaBuildIdentifier) {
+            this.hygieiaBuildIdentifier = hygieiaBuildIdentifier;
+        }
+
         public ListBoxModel doFillTestTypeItems(String testType) {
             ListBoxModel model = new ListBoxModel();
 
@@ -525,6 +534,7 @@ public class HygieiaPublisher extends Notifier {
             jenkinsUserId = jsonObject.getString("jenkinsUserId");
             jenkinsToken = jsonObject.getString("jenkinsToken");
             captureLogs=jsonObject.getBoolean("captureLogs");
+            hygieiaBuildIdentifier = jsonObject.getString("hygieiaBuildIdentifier");
             if(jsonObject.containsKey("hygieiaPublishGenericCollectorItems")) {
                 List<GenericCollectorItem> genericCollectorItems = sr.bindJSONToList(GenericCollectorItem.class, jsonObject.get("hygieiaPublishGenericCollectorItems"));
                 hygieiaPublishGenericCollectorItems =  genericCollectorItems.toArray(new GenericCollectorItem[genericCollectorItems.size()]);
