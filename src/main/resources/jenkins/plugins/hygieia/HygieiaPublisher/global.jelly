@@ -24,6 +24,9 @@
     <f:entry title="Name your Jenkins" help="/plugin/hygieia-publisher/help-globalConfig-hygieiaJenkinsName.html">
         <f:textbox field="hygieiaJenkinsName" name="hygieiaJenkinsName" value="${descriptor.getHygieiaJenkinsName()}" />
     </f:entry>
+    <f:entry title="Build Identifier Variable" help="/plugin/hygieia-publisher/help-globalConfig-hygieiaBuildIdentifier.html">
+        <f:textbox field="hygieiaBuildIdentifier" name="hygieiaBuildIdentifier" value="${descriptor.getHygieiaBuildIdentifier()}" />
+    </f:entry>
     <f:entry title="Jenkins User">
         <f:textbox field="jenkinsUserId" name="jenkinsUserId" value="${descriptor.getJenkinsUserId()}" />
     </f:entry>
