@@ -101,7 +101,7 @@ public class RestCall {
                     "application/json",
                     "UTF-8");
             post.setRequestEntity(requestEntity);
-            post.addRequestHeader(CommonConstants.HEADER_API_USER,API_USER);
+            post.addRequestHeader(CommonConstants.HEADER_API_USER, API_USER);
             int responseCode = client.executeMethod(post);
             String responseString = getResponseString(post.getResponseBodyAsStream());
             response = new RestCallResponse(responseCode, responseString);
@@ -124,7 +124,7 @@ public class RestCall {
                     "application/json",
                     "UTF-8");
             post.setRequestEntity(requestEntity);
-            post.addRequestHeader(CommonConstants.HEADER_API_USER,API_USER);
+            post.addRequestHeader(CommonConstants.HEADER_API_USER, API_USER);
             post.addRequestHeader(CommonConstants.HEADER_CLIENT_CORRELATION_ID, clientReference);
             int responseCode = client.executeMethod(post);
             String responseString = getResponseString(post.getResponseBodyAsStream());
@@ -144,7 +144,7 @@ public class RestCall {
         GetMethod get = new GetMethod(url);
         try {
             get.getParams().setContentCharset("UTF-8");
-            get.addRequestHeader(CommonConstants.HEADER_API_USER,API_USER);
+            get.addRequestHeader(CommonConstants.HEADER_API_USER, API_USER);
             int responseCode = client.executeMethod(get);
             String responseString = getResponseString(get.getResponseBodyAsStream());
             response = new RestCallResponse(responseCode, responseString);

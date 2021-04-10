@@ -188,8 +188,9 @@ public class HygieiaGlobalListener extends RunListener<Run<?, ?>> {
 
         String startedBy = HygieiaUtils.getUserID(run, listener);
         if(showConsoleOutput) { listener.getLogger().println("Hygieia: This build was initiated by " + startedBy); }
-        HygieiaResponse buildResponse = hygieiaService.publishBuildDataV3(new BuildBuilder().createBuildRequestFromRun(run, hygieiaGlobalListenerDescriptor.getHygieiaJenkinsName(),
-                listener, buildStatus, true, buildStages, startedBy));
+        BuildDataCreateRequest buildDataCreateRequest = new BuildBuilder().createBuildRequestFromRun(run, hygieiaGlobalListenerDescriptor.getHygieiaJenkinsName(),
+                listener, buildStatus, true, buildStages, startedBy);
+        HygieiaResponse buildResponse = hygieiaService.publishBuildDataV3(buildDataCreateRequest);
         if (buildResponse.getResponseCode() == HttpStatus.SC_CREATED) {
             try {
                 buildDataResponse = HygieiaUtils.convertJsonToObject(buildResponse.getResponseValue(), BuildDataCreateResponse.class);
