@@ -1,5 +1,6 @@
 package jenkins.plugins.hygieia;
 
+import com.capitalone.dashboard.util.CommonConstants;
 import hudson.ProxyConfiguration;
 import hygieia.utils.WildCardURL;
 import jenkins.model.Jenkins;
@@ -27,7 +28,7 @@ import java.util.regex.Pattern;
 
 public class RestCall {
     private static final Logger logger = Logger.getLogger(RestCall.class.getName());
-
+    private static final String API_USER = "hygieia_publisher_plugin";
     private boolean useProxy;
 
     public RestCall(boolean useProxy) {
@@ -93,15 +94,38 @@ public class RestCall {
     public RestCallResponse makeRestCallPost(String url, String jsonString) {
         RestCallResponse response;
         HttpClient client = getHttpClient();
-
         PostMethod post = new PostMethod(url);
-
         try {
             StringRequestEntity requestEntity = new StringRequestEntity(
                     jsonString,
                     "application/json",
                     "UTF-8");
             post.setRequestEntity(requestEntity);
+            post.addRequestHeader(CommonConstants.HEADER_API_USER,API_USER);
+            int responseCode = client.executeMethod(post);
+            String responseString = getResponseString(post.getResponseBodyAsStream());
+            response = new RestCallResponse(responseCode, responseString);
+        } catch (Exception e) {
+            logger.log(Level.SEVERE, "Hygieia: Error posting to Hygieia", e);
+            response = new RestCallResponse(HttpStatus.SC_BAD_REQUEST, "");
+        } finally {
+            post.releaseConnection();
+        }
+        return response;
+    }
+
+    public RestCallResponse makeRestCallPost(String url, String jsonString, String clientReference) {
+        RestCallResponse response;
+        HttpClient client = getHttpClient();
+        PostMethod post = new PostMethod(url);
+        try {
+            StringRequestEntity requestEntity = new StringRequestEntity(
+                    jsonString,
+                    "application/json",
+                    "UTF-8");
+            post.setRequestEntity(requestEntity);
+            post.addRequestHeader(CommonConstants.HEADER_API_USER,API_USER);
+            post.addRequestHeader(CommonConstants.HEADER_CLIENT_CORRELATION_ID, clientReference);
             int responseCode = client.executeMethod(post);
             String responseString = getResponseString(post.getResponseBodyAsStream());
             response = new RestCallResponse(responseCode, responseString);
@@ -120,6 +144,7 @@ public class RestCall {
         GetMethod get = new GetMethod(url);
         try {
             get.getParams().setContentCharset("UTF-8");
+            get.addRequestHeader(CommonConstants.HEADER_API_USER,API_USER);
             int responseCode = client.executeMethod(get);
             String responseString = getResponseString(get.getResponseBodyAsStream());
             response = new RestCallResponse(responseCode, responseString);
@@ -142,7 +167,7 @@ public class RestCall {
         while ((count = in.read(byteArray, 0, byteArray.length)) > 0) {
             outputStream.write(byteArray, 0, count);
         }
-        return new String(outputStream.toByteArray(), "UTF-8");
+        return new String(outputStream.toByteArray(), StandardCharsets.UTF_8);
     }
 
     public class RestCallResponse {

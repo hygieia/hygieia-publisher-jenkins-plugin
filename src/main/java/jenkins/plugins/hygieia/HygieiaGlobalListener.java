@@ -144,15 +144,17 @@ public class HygieiaGlobalListener extends RunListener<Run<?, ?>> {
             String hygieiaAppUrl = (CollectionUtils.size(appUrls) > index) ? appUrls.get(index) : null;
             String convertedBuildResponseString = null;
             String dashboardLink = null;
+            BuildDataCreateResponse buildDataCreateResponse = null;
 
             Triple<String, String, BuildDataCreateResponse> buildResponseTriple = publishBuildData(run, listener, hygieiaGlobalListenerDescriptor, hygieiaService, hygieiaAppUrl);
 
             if (buildResponseTriple != null) {
                 convertedBuildResponseString = buildResponseTriple.getLeft();
                 dashboardLink = buildResponseTriple.getMiddle();
+                buildDataCreateResponse = buildResponseTriple.getRight();
             }
-            publishSonarData(run, listener, hygieiaGlobalListenerDescriptor, hygieiaService, StringUtils.trimToNull(convertedBuildResponseString));
-            publishGenericCollectorItemsOnEnd(run, listener, hygieiaGlobalListenerDescriptor, hygieiaService, StringUtils.trimToNull(convertedBuildResponseString));
+            publishSonarData(run, listener, hygieiaGlobalListenerDescriptor, hygieiaService, StringUtils.trimToNull(convertedBuildResponseString), buildDataCreateResponse);
+            publishGenericCollectorItemsOnEnd(run, listener, hygieiaGlobalListenerDescriptor, hygieiaService, StringUtils.trimToNull(convertedBuildResponseString), buildDataCreateResponse);
 
             // publish the dashboard link
             if (showConsoleOutput && StringUtils.isNotEmpty(dashboardLink)) {
@@ -283,7 +285,8 @@ public class HygieiaGlobalListener extends RunListener<Run<?, ?>> {
        return url;
     }
 
-    private void publishSonarData(Run run, TaskListener listener, HygieiaPublisher.DescriptorImpl hygieiaGlobalListenerDescriptor, HygieiaService hygieiaService, @Nonnull String convertedBuildResponseString) {
+    private void publishSonarData(Run run, TaskListener listener, HygieiaPublisher.DescriptorImpl hygieiaGlobalListenerDescriptor,
+                                  HygieiaService hygieiaService, @Nonnull String convertedBuildResponseString, BuildDataCreateResponse buildDataCreateResponse) {
         if (!hygieiaGlobalListenerDescriptor.isHygieiaPublishSonarDataGlobal()) { return; }
         boolean showConsoleOutput = hygieiaGlobalListenerDescriptor.isShowConsoleOutput();
         try {
@@ -291,6 +294,9 @@ public class HygieiaGlobalListener extends RunListener<Run<?, ?>> {
             CodeQualityCreateRequest request = buildCodeQualityCreateRequest(run, listener, hygieiaGlobalListenerDescriptor.getHygieiaJenkinsName(),
                     convertedBuildResponseString, hygieiaGlobalListenerDescriptor.isUseProxy());
             if (request != null) {
+                if(buildDataCreateResponse != null && StringUtils.isNotEmpty(buildDataCreateResponse.getClientReference())){
+                    request.setClientReference(buildDataCreateResponse.getClientReference());
+                }
                 HygieiaResponse sonarResponse = hygieiaService.publishSonarResults(request);
                 if (sonarResponse.getResponseCode() == HttpStatus.SC_CREATED) {
                     if (showConsoleOutput) { listener.getLogger().println("Hygieia: Auto Published Sonar Data. " + sonarResponse.toString()); }
@@ -305,27 +311,30 @@ public class HygieiaGlobalListener extends RunListener<Run<?, ?>> {
         }
     }
 
-    private void publishGenericCollectorItemsOnEnd(Run run, TaskListener listener, HygieiaPublisher.DescriptorImpl hygieiaGlobalListenerDescriptor, HygieiaService hygieiaService, @Nonnull String convertedBuildResponseString) {
+    private void publishGenericCollectorItemsOnEnd(Run run, TaskListener listener, HygieiaPublisher.DescriptorImpl hygieiaGlobalListenerDescriptor,
+                                                   HygieiaService hygieiaService, @Nonnull String convertedBuildResponseString, BuildDataCreateResponse buildDataCreateResponse) {
         if (CollectionUtils.isEmpty(hygieiaGlobalListenerDescriptor.getHygieiaPublishGenericCollectorItems())) { return; }
         boolean showConsoleOutput = hygieiaGlobalListenerDescriptor.isShowConsoleOutput();
         List<HygieiaPublisher.GenericCollectorItem> publishItems = hygieiaGlobalListenerDescriptor.getHygieiaPublishGenericCollectorItems().stream().filter(p -> !p.isPublishOnStart()).collect(Collectors.toList());
-        publishItems(run, listener, publishItems, showConsoleOutput, hygieiaService, convertedBuildResponseString);
+        String clientReference = (Objects.isNull(buildDataCreateResponse)) ? null : buildDataCreateResponse.getClientReference();
+        publishItems(run, listener, publishItems, showConsoleOutput, hygieiaService, convertedBuildResponseString, clientReference);
     }
 
     private void publishGenericCollectorItemsOnStart(Run run, TaskListener listener, HygieiaPublisher.DescriptorImpl hygieiaGlobalListenerDescriptor, HygieiaService hygieiaService, @Nonnull String convertedBuildResponseString) {
         if (CollectionUtils.isEmpty(hygieiaGlobalListenerDescriptor.getHygieiaPublishGenericCollectorItems())) { return; }
         boolean showConsoleOutput = hygieiaGlobalListenerDescriptor.isShowConsoleOutput();
         List<HygieiaPublisher.GenericCollectorItem> publishItems = hygieiaGlobalListenerDescriptor.getHygieiaPublishGenericCollectorItems().stream().filter(p -> p.isPublishOnStart()).collect(Collectors.toList());
-        publishItems(run, listener, publishItems, showConsoleOutput, hygieiaService, convertedBuildResponseString);
+        publishItems(run, listener, publishItems, showConsoleOutput, hygieiaService, convertedBuildResponseString, null);
     }
 
-    private void publishItems(Run run, TaskListener listener, List<HygieiaPublisher.GenericCollectorItem> items,boolean showConsoleOutput, HygieiaService hygieiaService, @Nonnull String convertedBuildResponseString) {
+    private void publishItems(Run run, TaskListener listener, List<HygieiaPublisher.GenericCollectorItem> items,boolean showConsoleOutput, HygieiaService hygieiaService, @Nonnull String convertedBuildResponseString, String clientReference) {
         if (CollectionUtils.isEmpty(items)) { return; }
         for (HygieiaPublisher.GenericCollectorItem item : items) {
             try {
                 List<GenericCollectorItemCreateRequest> genericCollectorItemCreateRequests = GenericCollectorItemBuilder.getInstance().getRequests(run, item.toolName, item.pattern, convertedBuildResponseString);
                 if (CollectionUtils.isEmpty(genericCollectorItemCreateRequests)) continue;
                 for (GenericCollectorItemCreateRequest gcir : genericCollectorItemCreateRequests) {
+                    gcir.setClientReference(clientReference);
                     HygieiaResponse genericItemResponse = hygieiaService.publishGenericCollectorItemData(gcir);
                     if (showConsoleOutput) { listener.getLogger().println("Hygieia: Auto Published " + gcir.getToolName() + " Data. " + genericItemResponse.toString()); }
                 }
