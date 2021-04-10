@@ -29,6 +29,7 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <jenkins-test-harness.version>2.34</jenkins-test-harness.version>
+        <com.capitalone.dashboard.core.version>3.14.17</com.capitalone.dashboard.core.version>
     </properties>
 
     <licenses>
@@ -97,7 +98,7 @@
         <dependency>
             <groupId>com.capitalone.dashboard</groupId>
             <artifactId>core</artifactId>
-            <version>3.14.14</version>
+            <version>${com.capitalone.dashboard.core.version}</version>
         </dependency>
         <dependency>
             <groupId>org.jenkins-ci.plugins</groupId>
